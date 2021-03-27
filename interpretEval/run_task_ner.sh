@@ -1,40 +1,46 @@
 # Task type
 task_type="ner"
+base_dir="./data/"
 
-# path of training data
-path_data="./data/"
 
 # path of conf file
-path_aspect_conf="conf.ner-attributes"
+path_aspect_conf=$base_dir$task_type"/conf."$task_type"-attributes"
 
 
-# Part1: Dataset Name
+# Part1: Dataset Name:  you should put your training and test set in the directory, for example, ./data/conll03/ and name them as train.txt, test.txt, like this:
+# ./data/ner/conll03/data/train.txt
+# ./data/ner/conll03/data/txt.txt
 datasets[0]="conll03"
-datasets[1]="wnut16"
 
-# Part2: Model Name
+
+
+# Part2: Model Name： Two model should be input. If only one, just copy it twice. e.g., model1 = "lstm"  model2 = "lstm"
 model1="Flair"
 model2="ELMo"
+
 # Part3: Path of result files
-resfiles[0]="./preComputed/ner/result/connl03_CflairWglove_lstmCrf_9303.txt"
-resfiles[1]="./preComputed/ner/result/connl03_CelmoWglove_lstmCrf_9222.txt"
-resfiles[2]="./preComputed/ner/result/wnut16_CflairWglove_lstmCrf_27707443_4596.txt"
-resfiles[3]="./preComputed/ner/result/wnut16_CelmoWglove_lstmCrf_29275447_4533.txt"
+# ./data/ner/conll03/results/connl03_CflairWglove_lstmCrf_9303.txt
+# ./data/ner/conll03/results/connl03_CelmoWglove_lstmCrf_9222.txt
+resfiles[0]=$base_dir$task_type"/conll03/results/connl03_CflairWglove_lstmCrf_9303.txt"  # output of model1;  Format:  token true_label pred_label  (delimiter = " ")
+resfiles[1]=$base_dir$task_type"/conll03/results/connl03_CelmoWglove_lstmCrf_9222.txt"   # output of model2   Format:  token true_label pred_label  (delimiter = " ")
 
 
-path_preComputed="./preComputed"
+
+
+
+path_preComputed=$base_dir$task_type"/preComputed"
 path_fig=$task_type"-fig"
 path_output_tensorEval="output_tensorEval/"$task_type/$model1"-"$model2
 
 
 # delimiter=get_value_from_frontend()
 
-delimiter="s"
+#delimiter="s" # suggested
 
 rm -fr $path_output_tensorEval/*
 echo "${datasets[*]}"
 python3 tensorEvaluation-ner.py \
-	--path_data $path_data \
+	--path_data $base_dir \
 	--task_type $task_type  \
 	--path_fig $path_fig \
 	--data_list "${datasets[*]}"\
@@ -43,14 +49,20 @@ python3 tensorEvaluation-ner.py \
 	--path_aspect_conf $path_aspect_conf \
 	--resfile_list "${resfiles[*]}" \
 	--path_output_tensorEval $path_output_tensorEval \
-	--delimiter $delimiter 
+#	--delimiter $delimiter
 
 
 		       
 
 cd analysis
-rm ./$path_fig/$model1"-"$model2/*.results
-rm ./$path_fig/$model1"-"$model2/*.tex
+if [ -f "./$path_fig/$model1"-"$model2/*.results" ]; then
+  rm ./$path_fig/$model1"-"$model2/*.results
+fi
+if [ -f "./$path_fig/$model1"-"$model2/*.tex" ]; then
+  rm ./$path_fig/$model1"-"$model2/*.tex
+fi
+
+
 for i in `ls ../$path_output_tensorEval`
 do
 	cat ../$path_output_tensorEval/$i | python3 genFig.py --path_fig $path_fig/$model1"-"$model2 --path_bucket_range ./$path_fig/$model1"-"$model2/bucket.range \
@@ -58,9 +70,9 @@ do
 done
 
 
-# -----------------------------------------------------
+#-----------------------------------------------------
 
-# run pdflatex .tex
+#run pdflatex .tex
 cd $path_fig
 cd $model1"-"$model2
 find=".tex"
@@ -91,6 +103,6 @@ python3 genHtml.py 	--data_list ${datasets[*]} \
 			> tEval-$task_type.html
 
 
-sz tEval-$task_type.html
-tar zcvf $path_fig.tar.gz $path_fig
-sz $path_fig.tar.gz
+#sz tEval-$task_type.html
+#tar zcvf $path_fig.tar.gz $path_fig
+#sz $path_fig.tar.gz
